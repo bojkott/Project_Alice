@@ -177,6 +177,7 @@ namespace VRTK
                 climbingObject = e.target;
                 if (useGravity)
                 {
+                    playerPresence.SetFallingPhysicsOnlyParams(true);
                     playerPresence.StopPhysicsFall();
                 }
 

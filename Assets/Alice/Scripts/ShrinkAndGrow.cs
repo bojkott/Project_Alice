@@ -3,48 +3,79 @@ using System.Collections;
 using VRTK;
 public class ShrinkAndGrow : MonoBehaviour {
 
-    enum State {Grown, Shrunken, Growing, Shrinking};
 
-    private State state;
     RadialMenuButton resizeButton;
     RadialMenu resizeMenu;
+    private VRTK_PlayerPresence playerPresence;
+    private Rigidbody rb;
+
     public float GrownSize = 10.0f;
     public float ShrunkenSize = 1.0f;
     public float ResizeTime = 0.1f;
+    public float density = 100;
 
     public Sprite growIcon;
     public Sprite ShrinkIcon;
+    public VRTK_SimplePointer pointer;
+
+
+    bool initalized = false;
+
+    private void Initalize()
+    {
+
+        if (playerPresence == null || rb == null || resizeButton == null)
+        {
+            playerPresence = GetComponent<VRTK_PlayerPresence>();
+            rb = GetComponent<Rigidbody>();
+            findButton();
+        }
+        else
+        {
+            StartGrowing();
+            playerPresence.SetFallingPhysicsOnlyParams(false);
+            initalized = true;
+        }
+            
+    }
+    
+
 
 
 	// Update is called once per frame
 	void Update () {
-        if (resizeButton == null)
-            findButton();
+        if (!initalized)
+            Initalize();
+
+        if (Player.currentState == Player.State.Growing)
+            Grow();
+        else if (Player.currentState == Player.State.Shrinking)
+            Shrink();
 
 
-        if(state == State.Growing)
+        if (playerPresence.IsFalling())
         {
-            if (changeSize(GrownSize))
-                state = State.Grown;
-            
+            if (rb && rb.velocity == Vector3.zero)
+            {
+                playerPresence.StopPhysicsFall();
+                playerPresence.SetFallingPhysicsOnlyParams(false);
+            }
         }
-        else if(state == State.Shrinking)
-        {
-            if (changeSize(ShrunkenSize))
-                state = State.Shrunken;
-        }
+
 
     }
 
 
     private bool changeSize(float size)
     {
+
         Vector3 targetSize = new Vector3(size, size, size);
         transform.localScale = Vector3.Lerp(transform.localScale, targetSize, Time.deltaTime/ResizeTime);
 
-        if (Mathf.Abs(transform.localScale.x - size) <= 0.001f)
+        if (Mathf.Abs(transform.localScale.x - size) <= 0.01f)
         {
             transform.localScale = targetSize;
+            
             return true;
         }
         else
@@ -53,13 +84,41 @@ public class ShrinkAndGrow : MonoBehaviour {
     }
 
 
+    private void Grow()
+    {
+        playerPresence.SetFallingPhysicsOnlyParams(false);
+        pointer.enabled = false;
+        if (changeSize(GrownSize))
+        {
+            Player.currentState = Player.State.Grown;
+            rb.mass = density * Mathf.Pow(GrownSize, 3);
+            playerPresence.SetFallingPhysicsOnlyParams(true);
+            pointer.enabled = true;
+
+        }
+    }
+
+    private void Shrink()
+    {
+        playerPresence.SetFallingPhysicsOnlyParams(false);
+        pointer.enabled = false;
+        if (changeSize(ShrunkenSize))
+        {
+            Player.currentState = Player.State.Shrunken;
+            rb.mass = density * Mathf.Pow(ShrunkenSize, 3);
+            playerPresence.SetFallingPhysicsOnlyParams(true);
+            pointer.enabled = true;
+        }
+    }
+
     public void Resize()
     {
         
-        if (state == State.Grown)
-            Shrink();
-        else if (state == State.Shrunken)
-            Grow();
+
+        if (Player.currentState == Player.State.Grown)
+            StartShrinking();
+        else if (Player.currentState == Player.State.Shrunken)
+            StartGrowing();
 
         
     }
@@ -74,23 +133,22 @@ public class ShrinkAndGrow : MonoBehaviour {
             if(resizeMenu != null)
             {
                 resizeButton = resizeMenu.GetButton(0);
-                Grow();
             }
                 
         }
         
     }
 
-    private void Grow()
+    private void StartGrowing()
     {
-        state = State.Growing;
+        Player.currentState = Player.State.Growing;
         resizeButton.ButtonIcon = growIcon;
         resizeMenu.RegenerateButtons();
     }
 
-    private void Shrink()
+    private void StartShrinking()
     {
-        state = State.Shrinking;
+        Player.currentState = Player.State.Shrinking;
         resizeButton.ButtonIcon = ShrinkIcon;
         resizeMenu.RegenerateButtons();
     }
