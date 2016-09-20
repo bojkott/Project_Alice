@@ -128,15 +128,18 @@ namespace VRTK
                 switch (finalDirection)
                 {
                     case Direction.x:
-                        cj.axis = Vector3.right;
+                        cj.axis = Vector3.forward;
+                        cj.secondaryAxis = Vector3.up;
                         cj.xMotion = ConfigurableJointMotion.Limited;
                         break;
                     case Direction.y:
-                        cj.axis = Vector3.up;
+                        cj.axis = Vector3.right;
+                        cj.secondaryAxis = Vector3.forward;
                         cj.yMotion = ConfigurableJointMotion.Limited;
                         break;
                     case Direction.z:
-                        cj.axis = Vector3.forward;
+                        cj.axis = Vector3.up;
+                        cj.axis = Vector3.right;
                         cj.zMotion = ConfigurableJointMotion.Limited;
                         break;
                 }
