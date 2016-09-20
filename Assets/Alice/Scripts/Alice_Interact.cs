@@ -7,7 +7,7 @@ public class Alice_Interact : MonoBehaviour {
 
     VRTK_InteractableObject interObj;
 
-    public enum PlayerSize { Grown, Shrunken, Both }
+    public enum PlayerSize { Giant, Normal, Midget, All}
 
     public PlayerSize RequiredPlayerSize;
 
@@ -32,13 +32,22 @@ public class Alice_Interact : MonoBehaviour {
 
     public bool PlayerIsInCorrectState()
     {
-        if (RequiredPlayerSize == PlayerSize.Both)
+
+        if (RequiredPlayerSize == PlayerSize.All)
             return true;
-        else if (RequiredPlayerSize == PlayerSize.Grown && Player.currentState == Player.State.Grown)
+
+        if (RequiredPlayerSize == PlayerSize.Giant && Player.currentSize == Player.Sizes.Giant)
             return true;
-        else if (RequiredPlayerSize == PlayerSize.Shrunken && Player.currentState == Player.State.Shrunken)
+        
+
+        if (RequiredPlayerSize == PlayerSize.Normal && Player.currentSize == Player.Sizes.Normal)
             return true;
-        else
-            return false;
+
+
+        if (RequiredPlayerSize == PlayerSize.Midget && Player.currentSize == Player.Sizes.Midget)
+            return true;
+        
+
+        return false;
     }
 }

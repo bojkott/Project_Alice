@@ -153,6 +153,11 @@ namespace VRTK
             customCollider = false;
         }
 
+        public CapsuleCollider GetCollider()
+        {
+            return presenceCollider;
+        }
+
         private void OnEnable()
         {
             CreateCollider();

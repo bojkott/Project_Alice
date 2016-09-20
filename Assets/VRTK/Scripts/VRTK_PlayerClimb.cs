@@ -57,6 +57,8 @@ namespace VRTK
         private VRTK_HeadsetFade headsetFade;
         private GameObject climbingObject;
 
+       
+
         private void OnPlayerClimbStarted(PlayerClimbEventArgs e)
         {
             if (PlayerClimbStarted != null)
