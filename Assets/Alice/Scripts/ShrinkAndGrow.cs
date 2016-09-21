@@ -36,7 +36,7 @@ public class ShrinkAndGrow : MonoBehaviour {
 
     
 
-    private void Awake()
+    private void Start()
     {
         startScale = transform.localScale;
 
@@ -50,7 +50,9 @@ public class ShrinkAndGrow : MonoBehaviour {
                 
         SetSize(Player.Sizes.Normal);
         ResizePointer();
+        CorrectMass();
 
+        playerPresence.SetFallingPhysicsOnlyParams(false);
     }
 
 
@@ -64,13 +66,12 @@ public class ShrinkAndGrow : MonoBehaviour {
 
 
 
-        if (!rb.isKinematic)
+        if ( rb && !rb.isKinematic)
         {
 
-            if (gravityMultiplier == 1)
-                gravityMultiplier = 0;
-            rb.AddForce(-9.81f*gravityMultiplier * rb.mass*transform.up);
             
+            Vector3 extraGravity = Physics.gravity * (gravityMultiplier * rb.mass) - Physics.gravity;
+            rb.AddForce(extraGravity);
         }
 
 
@@ -113,20 +114,17 @@ public class ShrinkAndGrow : MonoBehaviour {
 
     private void Resize()
     {
-        playerPresence.SetFallingPhysicsOnlyParams(false);
         pointer.enabled = false;
         float targetSize = GetTargetSize(Player.currentSize);
         if (changeSize(targetSize))
         {
-            rb.mass = density * Mathf.Pow(targetSize, 3);
+            CorrectMass();
             Player.currentState = Player.State.Idle;
-            playerPresence.SetFallingPhysicsOnlyParams(true);
             ResizePointer();
-            gravityMultiplier = targetSize;
-
-            Debug.Log(Player.currentSize);
+            
         }
     }
+
 
 
     private void ResizePointer()
@@ -135,6 +133,18 @@ public class ShrinkAndGrow : MonoBehaviour {
         pointer.pointerThickness = pointerThickness * GetTargetSize(Player.currentSize);
         pointer.pointerLength = pointerLength * GetTargetSize(Player.currentSize);
         pointer.enabled = true;
+    }
+
+
+    private void CorrectMass()
+    {
+        if(rb)
+        {
+            float size = GetTargetSize(Player.currentSize);
+            rb.mass = density * Mathf.Pow(size, 3);
+            gravityMultiplier = size;
+        }
+            
     }
 
     void findButton()

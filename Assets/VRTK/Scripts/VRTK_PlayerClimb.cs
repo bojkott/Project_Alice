@@ -249,7 +249,12 @@ namespace VRTK
                     }
                 }
 
-                playerPresence.StartPhysicsFall(velocity);
+                //playerPresence.StartPhysicsFall(velocity);
+
+                playerPresence.SetFallingPhysicsOnlyParams(false);
+
+                GetComponent<Rigidbody>().velocity = velocity;
+
             }
             climbingObject = null;
         }
