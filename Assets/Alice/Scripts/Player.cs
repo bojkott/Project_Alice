@@ -21,4 +21,15 @@ public static class Player {
 
         return 0;
     }
+
+
+    public static bool CanGrow()
+    {
+        return getSizeIndex(currentSize) > 0;
+    }
+
+    public static bool CanShrink()
+    {
+        return getSizeIndex(currentSize) < numberOfSizes - 1;
+    }
 }

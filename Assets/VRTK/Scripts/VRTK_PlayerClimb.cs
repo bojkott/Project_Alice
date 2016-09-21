@@ -224,16 +224,16 @@ namespace VRTK
             isClimbing = false;
 
             // Move to the last safe spot
-            if (headsetColliding)
-            {
-                Vector3 headsetPosition = headCamera.transform.position;
+            //if (headsetColliding)
+            //{
+            //    Vector3 headsetPosition = headCamera.transform.position;
 
-                Vector3 moveVector = lastGoodHeadsetPosition - headsetPosition;
-                Vector3 moveDirection = moveVector.normalized;
-                Vector3 moveOffset = moveDirection * safeZoneTeleportOffset;
+            //    Vector3 moveVector = lastGoodHeadsetPosition - headsetPosition;
+            //    Vector3 moveDirection = moveVector.normalized;
+            //    Vector3 moveOffset = moveDirection * safeZoneTeleportOffset;
 
-                transform.position += moveVector + moveOffset;
-            }
+            //    transform.position += moveVector + moveOffset;
+            //}
 
             if (useGravity && carryMomentum)
             {

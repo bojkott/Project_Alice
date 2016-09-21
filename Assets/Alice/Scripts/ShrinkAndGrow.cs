@@ -4,57 +4,61 @@ using VRTK;
 public class ShrinkAndGrow : MonoBehaviour {
 
 
-    RadialMenuButton resizeButton;
-    RadialMenu resizeMenu;
+    private RadialMenuButton resizeButton;
+    private RadialMenu resizeMenu;
     private VRTK_PlayerPresence playerPresence;
     private Rigidbody rb;
+    private AudioSource audioSource;
 
-    public float GiantSize = 100.0f;
-    public float NormalSize = 10.0f;
-    public float MidgetSize = 1.0f;
+    private float gravityMultiplier = 0;
+    private float pointerThickness;
+    private float pointerLength;
 
-    public float ResizeTime = 0.1f;
+    public float giantSize = 100.0f;
+    public float normalSize = 10.0f;
+    public float midgetSize = 1.0f;
+
+    public float resizeTime = 0.2f;
     public float density = 100;
 
     public VRTK_SimplePointer pointer;
 
-    private float PointerThickness;
-    private float PointerLength;
-
-    public Player.Sizes MaxSize = Player.Sizes.Giant;
-    public Player.Sizes MinSize = Player.Sizes.Midget;
+    public Player.Sizes maxSize = Player.Sizes.Giant;
+    public Player.Sizes minSize = Player.Sizes.Midget;
 
 
-    private float gravityMultiplier = 0;
+    private float passedTime = 0;
+    private Vector3 startScale;
 
-    bool initalized = false;
 
-    private void Initalize()
+    public AudioClip growingSFX;
+    public AudioClip shrinkingSFX;
+
+    
+
+    private void Awake()
     {
+        startScale = transform.localScale;
 
-        if (playerPresence == null || rb == null || resizeButton == null)
-        {
-            playerPresence = GetComponent<VRTK_PlayerPresence>();
-            rb = GetComponent<Rigidbody>();
-            findButton();
+        playerPresence = GetComponent<VRTK_PlayerPresence>();
+        rb = GetComponent<Rigidbody>();
+        audioSource = GetComponent<AudioSource>();
+        findButton();
 
-            PointerThickness = pointer.pointerThickness;
-            PointerLength = pointer.pointerLength;
-        }
-        else
-        {
-            SetSize(Player.Sizes.Normal);
-            playerPresence.SetFallingPhysicsOnlyParams(false);
-            initalized = true;
-        }
-            
+        pointerThickness = pointer.pointerThickness;
+        pointerLength = pointer.pointerLength;
+                
+        SetSize(Player.Sizes.Normal);
+        ResizePointer();
+
     }
+
+
+    
     
 	// Update is called once per frame
 	void Update () {
-        if (!initalized)
-            Initalize();
-
+            
         if (Player.currentState == Player.State.Growing || Player.currentState == Player.State.Shrinking)
             Resize();
 
@@ -62,17 +66,11 @@ public class ShrinkAndGrow : MonoBehaviour {
 
         if (!rb.isKinematic)
         {
-            if (rb && rb.velocity == Vector3.zero)
-            {
-                playerPresence.StopPhysicsFall();
-                playerPresence.SetFallingPhysicsOnlyParams(false);
-            }
-            else
-            {
-                if (gravityMultiplier == 1)
-                    gravityMultiplier = 0;
-                rb.AddForce(-9.81f*gravityMultiplier * rb.mass*transform.up);
-            }
+
+            if (gravityMultiplier == 1)
+                gravityMultiplier = 0;
+            rb.AddForce(-9.81f*gravityMultiplier * rb.mass*transform.up);
+            
         }
 
 
@@ -81,19 +79,35 @@ public class ShrinkAndGrow : MonoBehaviour {
 
     private bool changeSize(float size)
     {
-                
+        passedTime += Time.deltaTime / resizeTime;
         Vector3 targetSize = new Vector3(size, size, size);
-        transform.localScale = Vector3.Lerp(transform.localScale, targetSize, Time.deltaTime/ResizeTime);
 
-        if (Mathf.Abs(transform.localScale.x - size) <= 0.01f)
+        Vector3 newScale = Vector3.Lerp(startScale, targetSize, passedTime);
+
+        ScaleWithHeadsetAdjust(newScale);
+
+        if (passedTime > 1)
         {
-            transform.localScale = targetSize;
-            
+            ScaleWithHeadsetAdjust(targetSize);
+            startScale = transform.localScale;
+            passedTime = 0;
             return true;
         }
         else
             return false;
 
+    }
+
+
+    private void ScaleWithHeadsetAdjust(Vector3 newScale)
+    {
+        Vector3 oldHeadsetPos = VRTK_DeviceFinder.HeadsetTransform().position;
+        transform.localScale = newScale;
+        Vector3 newHeadsetPos = VRTK_DeviceFinder.HeadsetTransform().position;
+
+        Vector3 difference = oldHeadsetPos - newHeadsetPos;
+        difference.y = 0; //Ignore height difference
+        transform.position += difference;
     }
 
 
@@ -107,13 +121,20 @@ public class ShrinkAndGrow : MonoBehaviour {
             rb.mass = density * Mathf.Pow(targetSize, 3);
             Player.currentState = Player.State.Idle;
             playerPresence.SetFallingPhysicsOnlyParams(true);
-            pointer.enabled = true;
-            pointer.pointerThickness = PointerThickness * targetSize;
-            pointer.pointerLength = PointerLength * targetSize;
+            ResizePointer();
             gravityMultiplier = targetSize;
 
             Debug.Log(Player.currentSize);
         }
+    }
+
+
+    private void ResizePointer()
+    {
+        pointer.enabled = false;
+        pointer.pointerThickness = pointerThickness * GetTargetSize(Player.currentSize);
+        pointer.pointerLength = pointerLength * GetTargetSize(Player.currentSize);
+        pointer.enabled = true;
     }
 
     void findButton()
@@ -133,56 +154,47 @@ public class ShrinkAndGrow : MonoBehaviour {
 
     public void StartGrowing()
     {
-        
 
-        if (Player.getSizeIndex(Player.currentSize) > 0 && Player.getSizeIndex(Player.currentSize) >= Player.getSizeIndex(MaxSize))
+        if (Player.CanGrow())
         {
-            
-            float targetSize = GetTargetSize(Player.currentSize - 1);
-            if (CheckSpace(targetSize))
-            {
-                Player.currentSize = Player.currentSize - 1;
-                Player.currentState = Player.State.Growing;
-                resizeMenu.RegenerateButtons();
-            }
+
+            SetSize(Player.currentSize - 1);
         }
             
         
     }
 
+        
     public void StartShrinking()
     {
-
-        if (Player.getSizeIndex(Player.currentSize) < Player.numberOfSizes-1 && Player.getSizeIndex(Player.currentSize) <= Player.getSizeIndex(MinSize))
+        if (Player.CanShrink())
         {
-
-            float targetSize = GetTargetSize(Player.currentSize + 1);
-            if (CheckSpace(targetSize))
-            {
-                Player.currentSize = Player.currentSize + 1;
-                Player.currentState = Player.State.Shrinking;
-                resizeMenu.RegenerateButtons();
-            }
+            SetSize(Player.currentSize + 1);
         }
-
-        Player.currentState = Player.State.Shrinking;
-        resizeMenu.RegenerateButtons();
     }
 
 
     public void SetSize(Player.Sizes size)
     {
-        if (Player.currentSize != size && Player.getSizeIndex(Player.currentSize) >= Player.getSizeIndex(MaxSize) && Player.getSizeIndex(Player.currentSize) <= Player.getSizeIndex(MinSize))
+        if (Player.currentSize != size && ValidSize(size) && Player.currentState == Player.State.Idle)
         {
             if (CheckSpace(GetTargetSize(size)))
             {
                Player.State state;
 
                 if (Player.getSizeIndex(Player.currentSize) > Player.getSizeIndex(size))
+                {
                     state = Player.State.Growing;
+                    audioSource.clip = growingSFX;
+                    
+                }
                 else
+                {
                     state = Player.State.Shrinking;
+                    audioSource.clip = shrinkingSFX;
+                }
 
+                audioSource.Play();
                 Player.currentState = state;                       
            
                 Player.currentSize = size;
@@ -191,6 +203,15 @@ public class ShrinkAndGrow : MonoBehaviour {
         }
     }
 
+
+
+    public bool ValidSize(Player.Sizes size) //Checks if the size is within the min-max sizes
+    {
+        if (Player.getSizeIndex(size) >= Player.getSizeIndex(maxSize) && Player.getSizeIndex(size) <= Player.getSizeIndex(minSize))
+            return true;
+        else
+            return false;
+    }
 
     private bool CheckSpace(float size)
     {
@@ -239,11 +260,11 @@ public class ShrinkAndGrow : MonoBehaviour {
     public float GetTargetSize(Player.Sizes size)
     {
         if (size == Player.Sizes.Giant)
-            return GiantSize;
+            return giantSize;
         else if (size == Player.Sizes.Normal)
-            return NormalSize;
+            return normalSize;
         else if (size == Player.Sizes.Midget)
-            return MidgetSize;
+            return midgetSize;
 
         return 0;
     }
