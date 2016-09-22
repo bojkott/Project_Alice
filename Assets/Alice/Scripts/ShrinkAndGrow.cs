@@ -7,19 +7,13 @@ public class ShrinkAndGrow : MonoBehaviour {
     private RadialMenuButton resizeButton;
     private RadialMenu resizeMenu;
     private VRTK_PlayerPresence playerPresence;
-    private Rigidbody rb;
+    private Alice_gravity gravityMod;
     private AudioSource audioSource;
 
-    private float gravityMultiplier = 0;
     private float pointerThickness;
     private float pointerLength;
-
-    public float giantSize = 100.0f;
-    public float normalSize = 10.0f;
-    public float midgetSize = 1.0f;
-
+       
     public float resizeTime = 0.2f;
-    public float density = 100;
 
     public VRTK_SimplePointer pointer;
 
@@ -41,7 +35,7 @@ public class ShrinkAndGrow : MonoBehaviour {
         startScale = transform.localScale;
 
         playerPresence = GetComponent<VRTK_PlayerPresence>();
-        rb = GetComponent<Rigidbody>();
+        gravityMod = GetComponent<Alice_gravity>();
         audioSource = GetComponent<AudioSource>();
         findButton();
 
@@ -50,9 +44,7 @@ public class ShrinkAndGrow : MonoBehaviour {
                 
         SetSize(Player.Sizes.Normal);
         ResizePointer();
-        CorrectMass();
-
-        playerPresence.SetFallingPhysicsOnlyParams(false);
+        gravityMod.SetScale(Player.currentSize);
     }
 
 
@@ -64,19 +56,8 @@ public class ShrinkAndGrow : MonoBehaviour {
         if (Player.currentState == Player.State.Growing || Player.currentState == Player.State.Shrinking)
             Resize();
 
-
-
-        if ( rb && !rb.isKinematic)
-        {
-
-            
-            Vector3 extraGravity = Physics.gravity * (gravityMultiplier * rb.mass) - Physics.gravity;
-            rb.AddForce(extraGravity);
-        }
-
-
+              
     }
-
 
     private bool changeSize(float size)
     {
@@ -115,10 +96,10 @@ public class ShrinkAndGrow : MonoBehaviour {
     private void Resize()
     {
         pointer.enabled = false;
-        float targetSize = GetTargetSize(Player.currentSize);
+        float targetSize = Player.GetSizeScale(Player.currentSize);
         if (changeSize(targetSize))
         {
-            CorrectMass();
+            gravityMod.SetScale(Player.currentSize);
             Player.currentState = Player.State.Idle;
             ResizePointer();
             
@@ -130,22 +111,13 @@ public class ShrinkAndGrow : MonoBehaviour {
     private void ResizePointer()
     {
         pointer.enabled = false;
-        pointer.pointerThickness = pointerThickness * GetTargetSize(Player.currentSize);
-        pointer.pointerLength = pointerLength * GetTargetSize(Player.currentSize);
+        pointer.pointerThickness = pointerThickness * Player.GetSizeScale(Player.currentSize);
+        pointer.pointerLength = pointerLength * Player.GetSizeScale(Player.currentSize);
         pointer.enabled = true;
     }
 
 
-    private void CorrectMass()
-    {
-        if(rb)
-        {
-            float size = GetTargetSize(Player.currentSize);
-            rb.mass = density * Mathf.Pow(size, 3);
-            gravityMultiplier = size;
-        }
-            
-    }
+
 
     void findButton()
     {
@@ -188,7 +160,7 @@ public class ShrinkAndGrow : MonoBehaviour {
     {
         if (Player.currentSize != size && ValidSize(size) && Player.currentState == Player.State.Idle)
         {
-            if (CheckSpace(GetTargetSize(size)))
+            if (CheckSpace(Player.GetSizeScale(size)))
             {
                Player.State state;
 
@@ -267,15 +239,5 @@ public class ShrinkAndGrow : MonoBehaviour {
     }
 
 
-    public float GetTargetSize(Player.Sizes size)
-    {
-        if (size == Player.Sizes.Giant)
-            return giantSize;
-        else if (size == Player.Sizes.Normal)
-            return normalSize;
-        else if (size == Player.Sizes.Midget)
-            return midgetSize;
-
-        return 0;
-    }
+    
 }

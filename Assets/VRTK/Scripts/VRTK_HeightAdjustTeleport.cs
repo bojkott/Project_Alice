@@ -161,7 +161,9 @@ namespace VRTK
         private bool FloorHeightChanged(float currentY)
         {
             var yDelta = Mathf.Abs(currentY - previousFloorY);
-            return (yDelta > floorHeightTolerance || yDelta < -floorHeightTolerance);
+            // return (yDelta > floorHeightTolerance || yDelta < -floorHeightTolerance);
+
+            return yDelta < -floorHeightTolerance;
         }
 
         private bool ValidDrop(bool rayHit, RaycastHit rayCollidedWith, float floorY)
@@ -259,6 +261,7 @@ namespace VRTK
                     if (UsePhysicsFall(useGravityFall, hitFloorY))
                     {
                         playerPresence.StartPhysicsFall(Vector3.zero);
+                        
                     }
                     else
                     {

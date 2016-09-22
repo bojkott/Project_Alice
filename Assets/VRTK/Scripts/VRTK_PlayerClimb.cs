@@ -1,4 +1,4 @@
-﻿// Player Climb|Scripts|0210
+﻿// Player Climb|Scripts|0210   ///THIS SCRIPT HAS BEEN MODIFIED FOR ALICE
 namespace VRTK
 {
     using UnityEngine;
@@ -218,7 +218,7 @@ namespace VRTK
             headsetColliding = false;
         }
 
-        private void Ungrab(bool carryMomentum, uint controllerIndex, GameObject target)
+        protected virtual void Ungrab(bool carryMomentum, uint controllerIndex, GameObject target)
         {
             OnPlayerClimbEnded(SetPlayerClimbEvent(controllerIndex, target));
             isClimbing = false;
@@ -249,11 +249,8 @@ namespace VRTK
                     }
                 }
 
-                //playerPresence.StartPhysicsFall(velocity);
 
-                playerPresence.SetFallingPhysicsOnlyParams(false);
-
-                GetComponent<Rigidbody>().velocity = velocity;
+                playerPresence.StartPhysicsFall(velocity);
 
             }
             climbingObject = null;

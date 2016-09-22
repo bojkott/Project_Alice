@@ -9,6 +9,10 @@ public static class Player {
     public static Sizes currentSize = Sizes.Normal;
     public static State currentState = State.Idle;
 
+    public static float giantSize = 100.0f;
+    public static float normalSize = 10.0f;
+    public static float midgetSize = 1.0f;
+
 
     public static int getSizeIndex(Sizes size)
     {
@@ -31,5 +35,18 @@ public static class Player {
     public static bool CanShrink()
     {
         return getSizeIndex(currentSize) < numberOfSizes - 1;
+    }
+
+
+    public static float GetSizeScale(Player.Sizes size)
+    {
+        if (size == Player.Sizes.Giant)
+            return giantSize;
+        else if (size == Player.Sizes.Normal)
+            return normalSize;
+        else if (size == Player.Sizes.Midget)
+            return midgetSize;
+
+        return 0;
     }
 }
